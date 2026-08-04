@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Mining Analytics</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="bg-dark text-light p-4">
+    <div class="container">
+        <h2 class="mb-4 text-center">ESP32 Solo Miner Analytics</h2>
+        
+        <!-- Live Stat Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card bg-secondary text-white text-center p-3">
+                    <h4>Current Hash Rate</h4>
+                    <h1 id="hashrate" class="display-4 text-warning">0.00</h1>
+                    <p class="mb-0">KH/s</p>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card bg-secondary text-white text-center p-3">
+                    <h4>Total Shares Found</h4>
+                    <h1 id="shares" class="display-4 text-success">0</h1>
+                    <p class="mb-0">Accepted Shares</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Chart -->
+        <div class="card bg-secondary p-3">
+            <h5 class="card-title text-center mb-3">Hash Rate Over Time</h5>
+            <canvas id="hashrateChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        // Setup Chart.js
+        const ctx = document.getElementById('hashrateChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Hash Rate (KH/s)',
+                    data: [],
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { ticks: { color: '#fff' } },
+                    y: { ticks: { color: '#fff' }, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { labels: { color: '#fff' } }
+                }
+            }
+        });
+
+        // Listen for live data broadcasts from Flask
+        socket.on('telemetry_update', function(data) {
+            const timeLabel = new Date().toLocaleTimeString();
+
+            // Update Cards
+            document.getElementById('hashrate').innerText = data.hashrate.toFixed(2);
+            document.getElementById('shares').innerText = data.shares;
+
+            // Update Chart Data (keep last 15 points)
+            chart.data.labels.push(timeLabel);
+            chart.data.datasets[0].data.push(data.hashrate);
+
+            if (chart.data.labels.length > 15) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+
+            chart.update();
+        });
+    </script>
+</body>
+</html>
