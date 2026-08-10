@@ -5,12 +5,13 @@ from flask_socketio import SocketIO
 from azure.eventhub.aio import EventHubConsumerClient
 import json
 import os
+from dotenv import load_dotenv
 
 
 
 # 1. Azure & Flask Configuration
-
-CONNECTION_STR = os.environ.get("EVENT_HUB_CONNECTION_STRING", "YOUR_LOCAL_FALLBACK_STRING")
+load_dotenv()
+CONNECTION_STR = os.environ.get("EVENT_HUB_CONNECTION_STRING")
 
 CONSUMER_GROUP = "$Default"
 

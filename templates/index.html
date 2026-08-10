@@ -42,8 +42,6 @@
 
     <script>
         const socket = io();
-
-        // Setup Chart.js
         const ctx = document.getElementById('hashrateChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
@@ -55,20 +53,44 @@
                     borderColor: '#ffc107',
                     backgroundColor: 'rgba(255, 193, 7, 0.2)',
                     fill: true,
-                    tension: 0.3
+                    tension: 0.1 // Lowered tension to prevent oversmoothed peaks/valleys
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
-                    x: { ticks: { color: '#fff' } },
-                    y: { ticks: { color: '#fff' }, beginAtZero: true }
+                    x: { 
+                        ticks: { color: '#fff' } 
+                    },
+                    y: { 
+                        ticks: { 
+                            color: '#fff',
+                            // Optional: Force a specific decimal precision on Y-axis labels
+                            callback: function(value) {
+                                return value.toFixed(2) + ' KH/s';
+                            }
+                        },
+                        beginAtZero: false, // Allows Y-axis to zoom into the 9-11 KH/s range
+                        // Optional explicit bounds if you want a fixed zoom:
+                        // min: 8,
+                        // max: 12,
+                        grace: '5%' // Adds a 5% margin above/below data points so lines don't clip the edges
+                    }
                 },
                 plugins: {
-                    legend: { labels: { color: '#fff' } }
+                    legend: { labels: { color: '#fff' } },
+                    tooltip: {
+                        callbacks: {
+                            // Formats tooltip values to 2 decimal places for precise reading
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} KH/s`;
+                            }
+                        }
+                    }
                 }
             }
         });
+  
 
         // Listen for live data broadcasts from Flask
         socket.on('telemetry_update', function(data) {
